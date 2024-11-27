@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Peramalan Stok dengan SES</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      /* Mengatur font dasar dan body */
+      body {
+        font-family: "Roboto", sans-serif;
+        background-image: url("4243126.jpg"); /* Replace with the actual image URL */
+        background-size: cover; /* Ensure the image covers the entire background */
+        background-position: center; /* Center the background image */
+        background-repeat: no-repeat; /* Prevent repeating the image */
+      }
+
+      /* Header */
+      h1,
+      h3,
+      h4 {
+        color: #1c3d5a;
+        font-weight: 600;
+      }
+
+      /* Menambahkan efek shadow pada container utama */
+      .container {
+        background-color: #fff;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        padding: 30px;
+        border-radius: 10px;
+      }
+
+      /* Styling untuk tombol */
+      .btn {
+        border-radius: 50px;
+        padding: 12px 20px;
+        font-size: 16px;
+        font-weight: 500;
+      }
+
+      /* Tombol utama */
+      .btn-primary {
+        background-color: #5c6bc0;
+        border-color: #5c6bc0;
+      }
+
+      .btn-primary:hover {
+        background-color: #4f5b91;
+        border-color: #4f5b91;
+      }
+
+      /* Tombol secondary */
+      .btn-secondary {
+        background-color: #f44336;
+        border-color: #f44336;
+      }
+
+      .btn-secondary:hover {
+        background-color: #d32f2f;
+        border-color: #d32f2f;
+      }
+
+      /* Styling untuk table */
+      table {
+        background-color: #fff;
+        border-collapse: collapse;
+        width: 100%;
+      }
+
+      table th,
+      table td {
+        padding: 12px;
+        text-align: center;
+        border: 1px solid #ddd;
+      }
+
+      table th {
+        background-color: #1c3d5a;
+        color: #fff;
+        font-weight: 600;
+      }
+
+      /* Styling untuk grafik */
+      canvas {
+        width: 100%;
+        height: 400px;
+      }
+
+      /* Dropdown styling */
+      .form-select {
+        padding: 10px;
+        font-size: 16px;
+        border-radius: 8px;
+        background-color: #f1f1f1;
+      }
+
+      .form-select:focus {
+        border-color: #5c6bc0;
+        box-shadow: 0 0 5px rgba(92, 107, 192, 0.5);
+      }
+
+      /* Styling untuk offcanvas */
+      .offcanvas-header {
+        background-color: #0383aa;
+        color: #fff;
+        border-bottom: 2px solid #ddd;
+      }
+
+      .offcanvas-body {
+        padding: 20px;
+        background-color: #f9f9f9;
+      }
+
+      .offcanvas-body ul {
+        list-style-type: none;
+        padding: 0;
+      }
+
+      .offcanvas-body ul li {
+        margin: 10px 0;
+      }
+
+      .offcanvas-body ul li a {
+        color: #1c3d5a;
+        text-decoration: none;
+        font-size: 16px;
+        font-weight: 500;
+      }
+
+      .offcanvas-body ul li a:hover {
+        color: #5c6bc0;
+      }
+
+      /* Styling untuk bulan dan rumus */
+      #monthOutput,
+      #formulaOutput,
+      #selectedMAPEOutput {
+        font-size: 16px;
+        font-weight: 500;
+        color: #333;
+      }
+
+      /* Margin tambahan untuk elemen-elemen penting */
+      .mt-4,
+      .mt-5,
+      .mt-3 {
+        margin-top: 20px !important;
+      }
+
+      /* Styling untuk bagian refresh */
+      .btn-refresh {
+        background-color: #ff9800;
+        border-color: #ff9800;
+      }
+
+      .btn-refresh:hover {
+        background-color: #fb8c00;
+        border-color: #fb8c00;
+      }
+
+      /* Responsivitas untuk tampilan mobile */
+      @media (max-width: 767px) {
+        .container {
+          padding: 20px;
+        }
+
+        h1 {
+          font-size: 28px;
+        }
+
+        .btn {
+          font-size: 14px;
+        }
+      }
+
+      /* Mengatur font dasar dan body */
+      body {
+        font-family: "Roboto", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f6f9;
+      }
+
+      /* Styling untuk navbar */
+      .navbar {
+        background-color: #0383aa; /* Warna navbar */
+        padding: 15px 30px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Tambahkan bayangan untuk efek */
+        position: sticky; /* Navbar tetap di atas saat scroll */
+        top: 0;
+        z-index: 999;
+      }
+
+      .navbar .navbar-brand {
+        color: #fff;
+        font-size: 24px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        transition: color 0.3s ease;
+      }
+
+      .navbar .navbar-brand:hover {
+        color: #0044ff; /* Warna hover untuk brand */
+      }
+
+      /* Navbar links */
+      .navbar .navbar-nav {
+        display: flex;
+        justify-content: flex-end; /* Letakkan item di kanan */
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+      }
+
+      .navbar .navbar-nav li {
+        margin-left: 25px; /* Jarak antar item */
+      }
+
+      .navbar .navbar-nav li a {
+        color: #fff;
+        font-size: 18px;
+        font-weight: 500;
+        text-decoration: none;
+        padding: 10px 15px;
+        border-radius: 8px;
+        transition: all 0.3s ease-in-out;
+      }
+
+      /* Efek hover untuk navbar link */
+      .navbar .navbar-nav li a:hover {
+        background-color: #0044ff; /* Warna hover */
+        color: #fff; /* Ubah warna teks saat hover */
+        transform: translateY(-2px); /* Efek naik sedikit saat hover */
+      }
+
+      /* Navbar toggler untuk mobile */
+      .navbar-toggler {
+        border-color: #fff;
+      }
+
+      .navbar-toggler-icon {
+        background-color: #fff; /* Ganti warna icon navbar-toggler */
+      }
+
+      /* Mengubah navbar untuk tampilan mobile */
+      @media (max-width: 991px) {
+        .navbar .navbar-nav {
+          flex-direction: column; /* Navbar items stack vertically */
+          align-items: center;
+        }
+
+        .navbar .navbar-nav li {
+          margin: 10px 0; /* Jarak antar item pada mobile */
+        }
+
+        .navbar .navbar-nav li a {
+          font-size: 16px;
+          padding: 12px 20px; /* Penyesuaian padding pada mobile */
+        }
+
+        .navbar .navbar-toggler {
+          display: block;
+        }
+      }
+
+      /* Styling untuk link yang aktif */
+      .navbar .navbar-nav .active a {
+        background-color: #0288d1;
+        color: #fff;
+        font-weight: bold;
+      }
+
+      /* Menambahkan efek transisi untuk seluruh navbar */
+      .navbar,
+      .navbar .navbar-nav li a {
+        transition: all 0.3s ease;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-dark">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="#">Peramalan Stok</a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+          aria-controls="navbarNav"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ms-auto">
+            <li class="nav-item">
+                <a class="nav-link" href="excel.html">Ubah Excel</a>
+              </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#unggah">Unggah</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#chart">Chart</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#tabel">Tabel</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#pilihbulan">Pilih Bulan</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#rumus">Rumus</a>
+            </li>
+
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container mt-5">
+      <div class="d-flex justify-content-center align-items-center">
+        <h1 class="text-center">
+          Peramalan Stok dengan Single Exponential Smoothing
+        </h1>
+      </div>
+
+      <div class="row justify-content-center mt-4" id="unggah">
+        <div class="col-md-6">
+          <form id="uploadForm">
+            <div class="mb-3">
+              <label for="fileInput" class="form-label"
+                >Unggah File Excel</label
+              >
+              <input
+                type="file"
+                id="fileInput"
+                class="form-control"
+                accept=".xlsx, .xls"
+              />
+            </div>
+            <button type="submit" class="btn btn-primary w-100">
+              Hasilkan Ramalan
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Tampilan Grafik -->
+      <div class="row mt-5" id="chart">
+        <div class="col-md-12">
+          <canvas id="forecastChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Tampilan Tabel Ramalan -->
+      <div class="row mt-5" id="tabel">
+        <div class="col-md-12">
+          <h3 class="text-center">Hasil Peramalan</h3>
+          <table id="forecastTable" class="table table-bordered mt-3">
+            <thead>
+              <tr>
+                <th>Tanggal</th>
+                <th>Stok Aktual Plisket</th>
+                <th>Stok Ramalan Plisket</th>
+                <th>Stok Aktual Cardigan</th>
+                <th>Stok Ramalan Cardigan</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Baris tabel akan ditambahkan secara dinamis -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Dropdown untuk Memilih Bulan Ramalan -->
+      <div class="row mt-4" id="pilihbulan">
+        <div class="col-md-6 offset-md-3">
+          <select
+            id="monthSelect"
+            class="form-select"
+            onchange="showForecastMonth()"
+          >
+            <option value="" disabled selected>Pilih Bulan</option>
+            <!-- Bulan akan ditambahkan secara dinamis -->
+          </select>
+          <p id="monthOutput" class="text-center mt-2"></p>
+        </div>
+      </div>
+
+      <!-- Tampilan Rumus -->
+      <div class="row mt-4" id="rumus">
+        <div class="col-md-6 offset-md-3">
+          <h4 class="text-center">Rumus Peramalan</h4>
+          <p id="formulaOutput" class="text-center"></p>
+        </div>
+      </div>
+
+      <!-- Tampilan MAPE -->
+      <div class="row mt-4">
+        <div class="col-md-6 offset-md-3">
+          <h4 class="text-center">Pilih Bulan untuk MAPE</h4>
+          <select
+            id="mapeMonthSelect"
+            class="form-select"
+            onchange="showSelectedMAPE()"
+          >
+            <option value="" disabled selected>Pilih Bulan</option>
+          </select>
+          <p id="selectedMAPEOutput" class="text-center mt-2"></p>
+        </div>
+      </div>
+
+      <div class="row mt-4" style="margin-bottom: 20px">
+        <div class="col-md-12 text-center">
+          <button onclick="refreshPage()" class="btn btn-secondary">
+            Refresh Halaman
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Load Libraries -->
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <script>
+      function refreshPage() {
+        location.reload();
+      }
+      // Variabel global untuk menyimpan data
+      let dates = [];
+      let plisketActualData = [];
+      let cardiganActualData = [];
+      let plisketForecastData = [];
+      let cardiganForecastData = [];
+
+      document
+        .getElementById("uploadForm")
+        .addEventListener("submit", function (e) {
+          e.preventDefault();
+          const fileInput = document.getElementById("fileInput").files[0];
+          if (!fileInput) {
+            alert("Silakan unggah file Excel.");
+            return;
+          }
+          // Panggil popup nilai alpha
+          showAlphaPopup(fileInput);
+        });
+
+      // Baca dan Parsing File Excel
+      function readExcel(file, alpha) {
+        const reader = new FileReader();
+        reader.onload = function (event) {
+          const data = new Uint8Array(event.target.result);
+          const workbook = XLSX.read(data, { type: "array" });
+          const sheetName = workbook.SheetNames[0];
+          const sheet = workbook.Sheets[sheetName];
+          const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+          processForecast(json, alpha);
+        };
+        reader.readAsArrayBuffer(file);
+      }
+
+      // Fungsi untuk mengonversi tanggal serial Excel ke format tanggal JavaScript
+      function excelSerialToDate(serial) {
+        const excelEpoch = new Date(Date.UTC(1899, 11, 30));
+        const date = new Date(excelEpoch.getTime() + serial * 86400000);
+        return date.toLocaleDateString("id-ID", {
+          year: "numeric",
+          month: "short",
+        });
+      }
+
+      //popup dari nilai alpa
+      function showAlphaPopup(file) {
+        const alpha = prompt("Masukkan nilai alpha (0 < α ≤ 1):", "0.5");
+        const alphaValue = parseFloat(alpha);
+
+        if (isNaN(alphaValue) || alphaValue <= 0 || alphaValue > 1) {
+          alert("Nilai alpha tidak valid. Silakan coba lagi.");
+          return;
+        }
+        readExcel(file, alphaValue);
+      }
+
+      // Perhitungan Ramalan dan Render Grafik
+      function processForecast(data, alpha) {
+        dates = [];
+        plisketActualData = [];
+        cardiganActualData = [];
+        plisketForecastData = [];
+        cardiganForecastData = [];
+
+        // Ekstrak data
+        data.slice(1).forEach((row) => {
+          if (row[0] && row[1] != null && row[2] != null) {
+            dates.push(excelSerialToDate(row[0]));
+            plisketActualData.push(row[1]);
+            cardiganActualData.push(row[2]);
+          }
+        });
+
+        // Lakukan SES
+        plisketForecastData.push(plisketActualData[0]);
+        cardiganForecastData.push(cardiganActualData[0]);
+
+        for (let i = 1; i < plisketActualData.length; i++) {
+          const plisketForecastValue =
+            alpha * plisketActualData[i - 1] +
+            (1 - alpha) * plisketForecastData[i - 1];
+          const cardiganForecastValue =
+            alpha * cardiganActualData[i - 1] +
+            (1 - alpha) * cardiganForecastData[i - 1];
+          plisketForecastData.push(plisketForecastValue);
+          cardiganForecastData.push(cardiganForecastValue);
+        }
+
+        function calculateMonthlyMAPE(dates, actual, forecast) {
+          const monthlyMAPE = {};
+
+          for (let i = 1; i < dates.length; i++) {
+            const month = dates[i].split(" ")[0];
+
+            if (!monthlyMAPE[month]) {
+              monthlyMAPE[month] = { errorSum: 0, count: 0 };
+            }
+
+            monthlyMAPE[month].errorSum += Math.abs(
+              (actual[i] - forecast[i]) / actual[i]
+            );
+            monthlyMAPE[month].count++;
+          }
+
+          // Hitung MAPE untuk setiap bulan
+          for (const month in monthlyMAPE) {
+            monthlyMAPE[month] =
+              (monthlyMAPE[month].errorSum / monthlyMAPE[month].count) * 100;
+          }
+
+          return monthlyMAPE;
+        }
+        // Hitung MAPE bulanan
+        const monthlyMAPEPlisket = calculateMonthlyMAPE(
+          dates,
+          plisketActualData,
+          plisketForecastData
+        );
+        const monthlyMAPECardigan = calculateMonthlyMAPE(
+          dates,
+          cardiganActualData,
+          cardiganForecastData
+        );
+
+        // Tampilkan MAPE bulanan
+        displayMonthlyMAPE(monthlyMAPEPlisket, monthlyMAPECardigan);
+
+        // Tampilkan hasil
+        renderChart();
+        renderForecastTable();
+        populateMonthDropdown();
+      }
+
+      //calculate mape
+      function calculateMAPE(actual, forecast) {
+        let errorSum = 0;
+        let count = 0;
+        for (let i = 1; i < actual.length; i++) {
+          errorSum += Math.abs((actual[i] - forecast[i]) / actual[i]);
+          count++;
+        }
+        return (errorSum / count) * 100;
+      }
+
+      // Render Grafik dengan Data Aktual dan Ramalan
+      function renderChart() {
+        const ctx = document.getElementById("forecastChart").getContext("2d");
+        new Chart(ctx, {
+          type: "line",
+          data: {
+            labels: dates,
+            datasets: [
+              {
+                label: "Stok Aktual Plisket",
+                data: plisketActualData,
+                borderColor: "blue",
+                borderWidth: 2,
+                pointBackgroundColor: "blue",
+                fill: false,
+              },
+              {
+                label: "Stok Ramalan Plisket",
+                data: plisketForecastData,
+                borderColor: "green",
+                borderWidth: 2,
+                borderDash: [5, 5],
+                pointBackgroundColor: "green",
+                fill: false,
+              },
+              {
+                label: "Stok Aktual Cardigan",
+                data: cardiganActualData,
+                borderColor: "red",
+                borderWidth: 2,
+                pointBackgroundColor: "red",
+                fill: false,
+              },
+              {
+                label: "Stok Ramalan Cardigan",
+                data: cardiganForecastData,
+                borderColor: "orange",
+                borderWidth: 2,
+                borderDash: [5, 5],
+                pointBackgroundColor: "orange",
+                fill: false,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: {
+                position: "top",
+              },
+              title: {
+                display: true,
+                text: "Peramalan Stok menggunakan Single Exponential Smoothing",
+              },
+            },
+            scales: {
+              x: {
+                title: {
+                  display: true,
+                  text: "Tanggal",
+                },
+              },
+              y: {
+                title: {
+                  display: true,
+                  text: "Nilai Stok",
+                },
+              },
+            },
+          },
+        });
+      }
+
+      // Render Tabel Ramalan
+      function renderForecastTable() {
+        const tableBody = document
+          .getElementById("forecastTable")
+          .getElementsByTagName("tbody")[0];
+        tableBody.innerHTML = "";
+
+        for (let i = 0; i < dates.length; i++) {
+          const row = tableBody.insertRow();
+          row.insertCell(0).textContent = dates[i];
+          row.insertCell(1).textContent = plisketActualData[i];
+          row.insertCell(2).textContent = plisketForecastData[i].toFixed(2);
+          row.insertCell(3).textContent = cardiganActualData[i];
+          row.insertCell(4).textContent = cardiganForecastData[i].toFixed(2);
+        }
+      }
+
+      // Isi Dropdown dengan Bulan Ramalan
+      function populateMonthDropdown() {
+        const monthSelect = document.getElementById("monthSelect");
+        monthSelect.innerHTML =
+          '<option value="" disabled selected>Pilih Bulan</option>';
+        const uniqueMonths = [
+          ...new Set(dates.map((date) => date.split(" ")[0])),
+        ];
+        uniqueMonths.forEach((month) => {
+          const option = document.createElement("option");
+          option.value = month;
+          option.textContent = month;
+          monthSelect.appendChild(option);
+        });
+      }
+
+      function showForecastMonth() {
+        const selectedMonth = document.getElementById("monthSelect").value;
+        const monthOutput = document.getElementById("monthOutput");
+        const formulaOutput = document.getElementById("formulaOutput");
+
+        monthOutput.textContent = `Ramalan untuk bulan ${selectedMonth} telah dipilih.`;
+
+        // Filter data untuk bulan yang dipilih
+        const monthDates = dates.filter(
+          (date) => date.split(" ")[0] === selectedMonth
+        );
+        const monthPlisketActual = plisketActualData.filter(
+          (value, index) => dates[index].split(" ")[0] === selectedMonth
+        );
+        const monthPlisketForecast = plisketForecastData.filter(
+          (value, index) => dates[index].split(" ")[0] === selectedMonth
+        );
+        const monthCardiganActual = cardiganActualData.filter(
+          (value, index) => dates[index].split(" ")[0] === selectedMonth
+        );
+        const monthCardiganForecast = cardiganForecastData.filter(
+          (value, index) => dates[index].split(" ")[0] === selectedMonth
+        );
+
+        // Tampilkan rumus untuk ramalan SES
+        formulaOutput.innerHTML = `
+        Ramalan untuk periode <strong>t</strong> dihitung menggunakan rumus:
+        <br>
+        <code>Ramalan(t) = α × Aktual(t-1) + (1 - α) × Ramalan(t-1)</code>
+        <br>
+        Di mana:
+        <br>
+        <strong>α</strong> = 0.5 (faktor pelurusan)
+        <br>
+        <strong>Aktual(t-1)</strong> = Nilai stok aktual dari periode sebelumnya
+        <br>
+        <strong>Ramalan(t-1)</strong> = Nilai ramalan dari periode sebelumnya
+        <br><br>
+        Untuk bulan yang dipilih <strong>${selectedMonth}:</strong>
+        <ul>
+            <li><strong>Stok Aktual Plisket:</strong> ${monthPlisketActual.join(
+              ", "
+            )}</li>
+            <li><strong>Stok Ramalan Plisket:</strong> ${monthPlisketForecast
+              .map((val) => val.toFixed(2))
+              .join(", ")}</li>
+            <li><strong>Stok Aktual Cardigan:</strong> ${monthCardiganActual.join(
+              ", "
+            )}</li>
+            <li><strong>Stok Ramalan Cardigan:</strong> ${monthCardiganForecast
+              .map((val) => val.toFixed(2))
+              .join(", ")}</li>
+        </ul>
+    `;
+      }
+
+      function displayMonthlyMAPE(mapePlisket, mapeCardigan) {
+        const mapeMonthSelect = document.getElementById("mapeMonthSelect");
+        mapeMonthSelect.innerHTML =
+          '<option value="" disabled selected>Pilih Bulan</option>';
+
+        for (const month in mapePlisket) {
+          const option = document.createElement("option");
+          option.value = month;
+          option.textContent = `Bulan ${month}`;
+          option.dataset.mapePlisket = mapePlisket[month].toFixed(2);
+          option.dataset.mapeCardigan = mapeCardigan[month].toFixed(2);
+          mapeMonthSelect.appendChild(option);
+        }
+      }
+
+      function showSelectedMAPE() {
+        const selectedOption =
+          document.getElementById("mapeMonthSelect").selectedOptions[0];
+        const mapePlisket = selectedOption.dataset.mapePlisket;
+        const mapeCardigan = selectedOption.dataset.mapeCardigan;
+
+        document.getElementById("selectedMAPEOutput").innerHTML = `
+        <strong>MAPE Bulan ${selectedOption.value}:</strong><br>
+        - Plisket: ${mapePlisket}%<br>
+        - Cardigan: ${mapeCardigan}%
+    `;
+      }
+    </script>
+  </body>
+</html>
